@@ -3,15 +3,28 @@ resource_name :rvm_installation
 property :user, String, name_property: true
 property :installer_url, String, required: true, default: lazy { node['rvm']['installer_url'] }
 property :installer_flags, String, required: true, default: lazy { node['rvm']['installer_flags'] }
+property :install_pkgs, String, required: true, default: lazy { node['rvm']['install_pkgs'] }
 property :rvmrc_template_source, String, required: true, default: 'rvmrc.erb'
 property :rvmrc_template_cookbook, String, required: true, default: 'rvm'
 property :rvmrc_gem_options, String, required: true, default: lazy { node['rvm']['gem_options'] }
 property :rvmrc_env, Hash, required: true, default: lazy { node['rvm']["rvmrc_env"] }
 property :installed, [TrueClass, FalseClass], required: true, default: false
-property :version, String, required: true, default: false
+property :version, String, required: true, default: lazy { node['rvm']['version'] }
 
 action :install do
-  converge_by("manage rvmrc for #{user}") { write_rvmrc }
+  converge_by("manage rvmrc for #{user}") {
+    template rvmrc_path do
+      owner new_resource.user
+      group etc_user.gid
+      mode 0644
+      source rvmrc_template_source
+      variables(
+        :user => new_resource.user,
+        :rvm_path => rvm_path,
+        :rvmrc_env => new_resource.rvmrc_env
+      )
+    end
+  }
 
   if new_resource.installed
     Chef::Log.info("#{user} #{current_resource.version} already installed - nothing to do")
@@ -22,24 +35,34 @@ action :install do
 end
 
 action :force do
-  converge_by("manage rvmrc for #{user}") { write_rvmrc }
+  converge_by("manage rvmrc for #{user}") {
+    template rvmrc_path do
+      owner new_resource.user
+      group etc_user.gid
+      mode 0644
+      source rvmrc_template_source
+      variables(
+        :user => new_resource.user,
+        :rvm_path => rvm_path,
+        :rvmrc_env => new_resource.rvmrc_env
+      )
+    end
+  }
 end
 
 def install_rvm
-  Array(new_resource.install_pkgs).map do |pkg|
-    r = Chef::Resource::Package.new(pkg, run_context)
-    r.run_action(:install)
-    r
+  install_pkgs.each do |pkg|
+    package pkg
   end
 
-  r = Chef::Resource::RemoteFile.new(rvm_installer_path, run_context)
-  r.source(new_resource.installer_url)
-  r.run_action(:create)
-  r
+  remote_file rvm_installer_path do
+    source new_resource.installer_url
+    action :create
+  end
 
   rvm_shell_out!(%{bash #{rvm_installer_path} #{new_resource.installer_flags}})
 
-  cmd = rvm("version")
+  cmd = rvm('version')
   matches = /^rvm ([\w.]+)/.match(cmd.stdout)
 
   if cmd.exitstatus != 0
@@ -53,22 +76,6 @@ def install_rvm
     raise "Could not determine version for #{user} " +
       "from version string [#{cmd.stdout}]"
   end
-end
-
-def write_rvmrc
-  r = Chef::Resource::Template.new(rvmrc_path, run_context)
-  r.owner(new_resource.user)
-  r.group(etc_user.gid)
-  r.mode("0644")
-  r.source(new_resource.rvmrc_template_source)
-  r.cookbook(new_resource.rvmrc_template_cookbook)
-  r.variables(
-    :user => new_resource.user,
-    :rvm_path => rvm_path,
-    :rvmrc_env => new_resource.rvmrc_env
-  )
-  r.run_action(:create)
-  r
 end
 
 def rvm_installer_path
