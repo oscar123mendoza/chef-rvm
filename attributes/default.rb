@@ -20,8 +20,8 @@
 #
 
 # ruby that will get installed and set to `rvm use default`.
-default['rvm']['default_ruby']      = 'ruby-1.9.3-p547'
-default['rvm']['user_default_ruby'] = 'ruby-1.9.3-p547'
+default['rvm']['default_ruby']      = 'ruby-2.5.1'
+default['rvm']['user_default_ruby'] = 'ruby-2.5.1'
 
 # list of additional rubies that will be installed
 default['rvm']['rubies']      = []
@@ -49,8 +49,8 @@ default['rvm']['installer_url']   = 'https://raw.githubusercontent.com/rvm/rvm/m
 default['rvm']['version'] = 'stable'
 
 # GPG key for rvm verification
-default['rvm']['gpg_key']        = 'D39DC0E3'
-default['rvm']['gpg_key_server'] = 'hkp://keys.gnupg.net'
+default['rvm']['gpg']['key']        = 'D39DC0E3'
+default['rvm']['gpg']['key_server'] = 'hkp://keys.gnupg.net'
 
 # Autolib mode, see https://rvm.io/rvm/autolibs
 default['rvm']['autolib_mode'] = 3

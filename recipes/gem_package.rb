@@ -17,7 +17,7 @@
 # limitations under the License.
 #
 
-node_val = node['rvm']['gem_package']['rvm_string']
+node_val = node['rvm']['default_ruby']
 case node_val
 when String
   rvm_descriptor = node_val + ' RVM Ruby'

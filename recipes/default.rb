@@ -22,19 +22,3 @@ chef_gem 'rvm' do
   action :install
   version '>= 1.11.3.6'
 end
-require 'rvm'
-
-create_rvm_shell_chef_wrapper
-create_rvm_chef_user_environment
-
-class Chef::Resource
-  # mix in #rvm_cmd_wrap helper into resources
-  include Chef::RVM::ShellHelpers
-end
-
-class Chef::Recipe
-  # mix in recipe helpers
-  include Chef::RVM::ShellHelpers
-  include Chef::RVM::RecipeHelpers
-  include Chef::RVM::StringHelpers
-end
